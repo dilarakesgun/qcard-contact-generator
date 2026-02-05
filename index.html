@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QCard - Branding Edition</title>
+    <script src="https://cdn.jsdelivr.net/npm/easyqrcodejs@4.5.0/dist/easy.qrcode.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* --- CSS --- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: white;
+            width: 100%;
+            max-width: 450px;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .lang-switch { position: absolute; top: 20px; right: 20px; display: flex; gap: 5px; }
+        .lang-btn { background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; padding: 5px 10px; font-size: 12px; cursor: pointer; font-weight: bold; color: #374151; }
+        .lang-btn.active { background: #2563eb; color: white; border-color: #2563eb; }
+
+        h1 { text-align: center; color: #111827; font-size: 26px; margin-bottom: 5px; margin-top: 10px; }
+        .subtitle { text-align: center; color: #6b7280; font-size: 14px; margin-bottom: 25px; }
+        
+        .section-title {
+            font-size: 12px; text-transform: uppercase; color: #9ca3af;
+            font-weight: 700; letter-spacing: 1px; margin-bottom: 10px;
+            margin-top: 20px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .input-group { position: relative; margin-bottom: 15px; }
+        .input-group i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 18px; transition: color 0.3s; z-index: 10; }
+        .input-group input, .input-group select {
+            width: 100%; padding: 12px 12px 12px 45px;
+            border: 2px solid #e5e7eb; border-radius: 12px;
+            box-sizing: border-box; font-size: 15px; transition: all 0.3s; background: white;
+        }
+
+        /*File Uploading Space Style */
+        .file-upload-wrapper {
+            border: 2px dashed #e5e7eb; padding: 15px; border-radius: 12px;
+            text-align: center; cursor: pointer; transition: 0.3s; margin-bottom: 15px;
+            background: #f9fafb;
+        }
+        .file-upload-wrapper:hover { border-color: #2563eb; background: #eff6ff; }
+        .file-upload-wrapper input[type="file"] { display: none; }
+        .file-upload-label { cursor: pointer; font-size: 14px; color: #6b7280; display: block; }
+        .file-upload-label i { font-size: 20px; margin-bottom: 5px; display: block; color: #2563eb; }
+        #logo-preview { max-width: 50px; max-height: 50px; margin-top: 10px; display: none; border-radius: 5px; border: 1px solid #ddd; }
+
+        .input-group input.error { border-color: #ef4444; background-color: #fef2f2; }
+        .error-msg { color: #ef4444; font-size: 11px; margin-top: 4px; display: none; margin-left: 5px; font-weight: 600; }
+
+        .phone-container { display: flex; gap: 10px; }
+        .country-select { flex: 0 0 120px; position: relative; }
+        .country-select select { padding-left: 10px; appearance: none; cursor: pointer; text-overflow: ellipsis; }
+
+        .input-group input:focus, .country-select select:focus { outline: none; border-color: #2563eb; background-color: #f8fafc; }
+        .input-group input:focus + i { color: #2563eb; }
+        
+        .input-group:focus-within .fa-linkedin { color: #0077b5 !important; }
+        .input-group:focus-within .fa-github { color: #333 !important; }
+        .input-group:focus-within .fa-instagram { color: #e1306c !important; }
+
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 20px; transition: transform 0.2s, background 0.3s; }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.5); }
+        .btn-secondary { background-color: #10b981; color: white; display: none; }
+        .btn-clear { background: none; border: none; color: #ef4444; font-size: 12px; cursor: pointer; font-weight: 600; padding: 0; }
+        
+        #qr-area { margin-top: 30px; padding: 20px; background: #f9fafb; border-radius: 15px; border: 2px dashed #e5e7eb; display: flex; flex-direction: column; align-items: center; display: none; }
+        #qr-code { margin-bottom: 15px; }
+        
+        #save-toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: #374151; color: white; padding: 10px 20px; border-radius: 20px; font-size: 12px; opacity: 0; transition: opacity 0.5s; pointer-events: none; z-index: 100; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="lang-switch">
+            <button class="lang-btn active" id="btn-tr" onclick="setLanguage('tr')">TR</button>
+            <button class="lang-btn" id="btn-en" onclick="setLanguage('en')">EN</button>
+            <button class="lang-btn" id="btn-de" onclick="setLanguage('de')">DE</button>
+        </div>
+
+        <h1>QCard <span style="color:#2563eb">Pro</span></h1>
+        <p class="subtitle" data-lang="subtitle">Verileriniz tarayıcınızda otomatik kaydedilir.</p>
+
+        <div class="section-title">
+            <span data-lang="personal_info">KİŞİSEL BİLGİLER</span>
+            <button onclick="clearData()" class="btn-clear"><i class="fas fa-trash"></i> <span data-lang="clear_form">Temizle</span></button>
+        </div>
+
+        <div class="input-group">
+            <i class="fas fa-user"></i>
+            <input type="text" id="name" data-placeholder="name_ph" placeholder="Ad Soyad" oninput="validateName(); saveData()">
+            <div id="name-error" class="error-msg" data-lang="error_name">Sadece harf kullanabilirsiniz.</div>
+        </div>
+
+        <div class="input-group phone-container">
+            <div class="country-select">
+                <select id="country-code" onchange="saveData()"></select>
+            </div>
+            <div style="position: relative; flex: 1;">
+                <i class="fas fa-phone"></i>
+                <input type="tel" id="phone" data-placeholder="phone_ph" placeholder="555 123 45 67" maxlength="15" oninput="validatePhone(); saveData()">
+            </div>
+        </div>
+        <div id="phone-error" class="error-msg" style="margin-top:-10px; margin-bottom:10px;" data-lang="error_phone">Sadece rakam giriniz.</div>
+
+        <div class="input-group">
+            <i class="fas fa-envelope"></i>
+            <input type="email" id="email" data-placeholder="email_ph" placeholder="E-posta Adresi" oninput="saveData()">
+        </div>
+
+        <div class="section-title" data-lang="branding">LOGO & MARKA</div>
+        
+        <div class="file-upload-wrapper" onclick="document.getElementById('logoInput').click()">
+            <input type="file" id="logoInput" accept="image/*" onchange="handleLogoUpload(this)">
+            <label class="file-upload-label">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <span id="upload-text" data-lang="upload_text">Logo yüklemek için tıklayın</span>
+            </label>
+            <img id="logo-preview" src="">
+        </div>
+
+        <div class="section-title" data-lang="social_media">SOSYAL MEDYA & WEB</div>
+
+        <div class="input-group"><i class="fab fa-linkedin"></i><input type="text" id="linkedin" data-placeholder="linkedin_ph" placeholder="LinkedIn" oninput="saveData()"></div>
+        <div class="input-group"><i class="fab fa-github"></i><input type="text" id="github" data-placeholder="github_ph" placeholder="GitHub" oninput="saveData()"></div>
+        <div class="input-group"><i class="fab fa-instagram"></i><input type="text" id="instagram" data-placeholder="instagram_ph" placeholder="Instagram" oninput="saveData()"></div>
+        <div class="input-group"><i class="fas fa-globe"></i><input type="text" id="website" data-placeholder="website_ph" placeholder="Web Sitesi" oninput="saveData()"></div>
+
+        <button class="btn btn-primary" onclick="generateQR()">
+            <i class="fas fa-qrcode"></i> <span data-lang="generate_btn">Kartviziti Oluştur</span>
+        </button>
+        
+        <div id="qr-area">
+            <div id="qr-code"></div>
+            <button id="downloadBtn" class="btn btn-secondary" onclick="downloadVCF()">
+                <i class="fas fa-download"></i> <span data-lang="download_btn">Rehbere Kaydet (.vcf)</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="save-toast" data-lang="saved_msg">Otomatik kaydedildi</div>
+
+   <script>
+        
+        const countries = [
+            { code: "TR", dial: "+90", flag: "🇹🇷" }, { code: "US", dial: "+1", flag: "🇺🇸" },
+            { code: "GB", dial: "+44", flag: "🇬🇧" }, { code: "DE", dial: "+49", flag: "🇩🇪" },
+            { code: "AZ", dial: "+994", flag: "🇦🇿" }, { code: "FR", dial: "+33", flag: "🇫🇷" },
+            { code: "IT", dial: "+39", flag: "🇮🇹" }, { code: "ES", dial: "+34", flag: "🇪🇸" },
+            { code: "NL", dial: "+31", flag: "🇳🇱" }, { code: "RU", dial: "+7", flag: "🇷🇺" },
+            { code: "CN", dial: "+86", flag: "🇨🇳" }, { code: "JP", dial: "+81", flag: "🇯🇵" }
+        ];
+
+        const translations = {
+            tr: {
+                subtitle: "Verileriniz tarayıcınızda otomatik kaydedilir.",
+                personal_info: "KİŞİSEL BİLGİLER",
+                branding: "LOGO & MARKA",
+                upload_text: "Logo yüklemek için tıklayın (İsteğe bağlı)",
+                clear_form: "Temizle",
+                social_media: "SOSYAL MEDYA & WEB",
+                generate_btn: "Kartviziti Oluştur",
+                download_btn: "Rehbere Kaydet (.vcf)",
+                saved_msg: "Otomatik kaydedildi",
+                error_name: "Lütfen sadece harf kullanın.",
+                error_phone: "Sadece rakam giriniz.",
+                alert_error: "Lütfen hatalı alanları düzeltin.",
+                alert_empty: "Lütfen en az bir bilgi girin.",
+                name_ph: "Ad Soyad", phone_ph: "555 123 45 67", email_ph: "E-posta Adresi",
+                linkedin_ph: "LinkedIn Profil Linki", github_ph: "GitHub Profil Linki",
+                instagram_ph: "Instagram Kullanıcı Adı", website_ph: "Kişisel Web Sitesi"
+            },
+            en: {
+                subtitle: "Your data is automatically saved in browser.",
+                personal_info: "PERSONAL INFO",
+                branding: "LOGO & BRANDING",
+                upload_text: "Click to upload Logo (Optional)",
+                clear_form: "Clear",
+                social_media: "SOCIAL MEDIA & WEB",
+                generate_btn: "Generate Business Card",
+                download_btn: "Save to Contacts (.vcf)",
+                saved_msg: "Auto-saved",
+                error_name: "Please use letters only.",
+                error_phone: "Please enter digits only.",
+                alert_error: "Please fix the errors.",
+                alert_empty: "Please enter at least one detail.",
+                name_ph: "Full Name", phone_ph: "555 123 45 67", email_ph: "Email Address",
+                linkedin_ph: "LinkedIn URL", github_ph: "GitHub URL",
+                instagram_ph: "Instagram Username", website_ph: "Personal Website"
+            },
+            de: {
+                subtitle: "Ihre Daten werden automatisch gespeichert.",
+                personal_info: "PERSÖNLICHE DATEN",
+                branding: "LOGO & BRANDING",
+                upload_text: "Klicken zum Hochladen (Optional)",
+                clear_form: "Löschen",
+                social_media: "SOZIALE MEDIEN & WEB",
+                generate_btn: "Visitenkarte erstellen",
+                download_btn: "In Kontakten speichern (.vcf)",
+                saved_msg: "Automatisch gespeichert",
+                error_name: "Bitte verwenden Sie nur Buchstaben.",
+                error_phone: "Bitte nur Ziffern eingeben.",
+                alert_error: "Bitte korrigieren Sie die Fehler.",
+                alert_empty: "Bitte geben Sie mindestens ein Detail ein.",
+                name_ph: "Vor- und Nachname", phone_ph: "555 123 45 67", email_ph: "E-Mail-Adresse",
+                linkedin_ph: "LinkedIn Profil-URL", github_ph: "GitHub Profil-URL",
+                instagram_ph: "Instagram Benutzername", website_ph: "Persönliche Webseite"
+            }
+        };
+
+        let currentLang = 'tr';
+        
+        let qrString = "";   //for QR code
+        let fileString = ""; // for downloading file (with photo)
+        
+        let uploadedLogoBase64 = null; 
+        let qrCodeObj = null; 
+
+        window.onload = function() {
+            populateCountries();
+            loadData();
+        };
+
+        function populateCountries() {
+            const select = document.getElementById("country-code");
+            countries.forEach(c => {
+                const option = document.createElement("option");
+                option.value = c.dial;
+                option.text = `${c.flag} ${c.dial}`;
+                select.appendChild(option);
+            });
+        }
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('btn-' + lang).classList.add('active');
+            document.querySelectorAll('[data-lang]').forEach(el => {
+                const key = el.getAttribute('data-lang');
+                if (translations[lang][key]) el.innerText = translations[lang][key];
+            });
+            document.querySelectorAll('[data-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-placeholder');
+                if (translations[lang][key]) el.placeholder = translations[lang][key];
+            });
+            validateName(); validatePhone(); saveData();
+        }
+
+        function handleLogoUpload(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    uploadedLogoBase64 = e.target.result;
+                    const preview = document.getElementById('logo-preview');
+                    preview.src = uploadedLogoBase64;
+                    preview.style.display = 'inline-block';
+                    document.getElementById('upload-text').innerText = input.files[0].name;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function validateName() {
+            const el = document.getElementById('name');
+            const regex = /^[a-zA-Z\u00C0-\u024F\s\.\'\-]+$/;
+            if (el.value.length > 0 && !regex.test(el.value)) {
+                el.classList.add('error'); document.getElementById('name-error').style.display = 'block';
+                document.getElementById('name-error').innerText = translations[currentLang].error_name;
+                return false;
+            }
+            el.classList.remove('error'); document.getElementById('name-error').style.display = 'none';
+            return true;
+        }
+
+        function validatePhone() {
+            const el = document.getElementById('phone');
+            const regex = /^\d+$/;
+            if (el.value.length > 0 && (!regex.test(el.value) || el.value.length > 15)) {
+                el.classList.add('error'); document.getElementById('phone-error').style.display = 'block';
+                document.getElementById('phone-error').innerText = translations[currentLang].error_phone;
+                return false;
+            }
+            el.classList.remove('error'); document.getElementById('phone-error').style.display = 'none';
+            return true;
+        }
+
+        function saveData() {
+            const data = {
+                lang: currentLang, country: document.getElementById('country-code').value,
+                name: document.getElementById('name').value, phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value, linkedin: document.getElementById('linkedin').value,
+                github: document.getElementById('github').value, instagram: document.getElementById('instagram').value,
+                website: document.getElementById('website').value
+            };
+            localStorage.setItem('qcard_user_data_v6', JSON.stringify(data));
+            showToast();
+        }
+
+        function loadData() {
+            const savedData = localStorage.getItem('qcard_user_data_v6');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                if(data.lang) setLanguage(data.lang);
+                document.getElementById('country-code').value = data.country || "+90";
+                document.getElementById('name').value = data.name || "";
+                document.getElementById('phone').value = data.phone || "";
+                document.getElementById('email').value = data.email || "";
+                document.getElementById('linkedin').value = data.linkedin || "";
+                document.getElementById('github').value = data.github || "";
+                document.getElementById('instagram').value = data.instagram || "";
+                document.getElementById('website').value = data.website || "";
+                validateName(); validatePhone();
+            }
+        }
+
+        function clearData() {
+            if(confirm("Emin misin? / Are you sure?")) {
+                localStorage.removeItem('qcard_user_data_v6');
+                document.querySelectorAll('input').forEach(i => { i.value=""; i.classList.remove('error'); });
+                document.getElementById("qr-area").style.display = "none";
+                uploadedLogoBase64 = null;
+                document.getElementById('logo-preview').style.display = "none";
+                document.getElementById('upload-text').innerText = translations[currentLang].upload_text;
+                setLanguage('tr');
+            }
+        }
+
+        function showToast() {
+            const toast = document.getElementById('save-toast');
+            toast.style.opacity = "1"; setTimeout(() => { toast.style.opacity = "0"; }, 1500);
+        }
+
+        function generateQR() {
+            if (!validateName() || !validatePhone()) { alert(translations[currentLang].alert_error); return; }
+
+            const name = document.getElementById('name').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const linkedin = document.getElementById('linkedin').value.trim();
+            const website = document.getElementById('website').value.trim();
+            
+            if(!name && !phone && !email && !linkedin) { alert(translations[currentLang].alert_empty); return; }
+
+            let fullPhone = phone ? (phone.startsWith("+") ? phone : document.getElementById('country-code').value + " " + phone) : "";
+            
+            // --- BASE DATA  ---
+            let commonData = "";
+            if(name) commonData += "N:;" + name + ";;;\nFN:" + name + "\n";
+            if(fullPhone) commonData += "TEL;TYPE=CELL:" + fullPhone + "\n";
+            if(email) commonData += "EMAIL:" + email + "\n";
+            if(website) commonData += "URL:" + website + "\n";
+            if(linkedin) commonData += "URL;TYPE=LinkedIn:" + linkedin + "\n";
+
+            // --- 1. string for QR (without photo) ---
+            qrString = "BEGIN:VCARD\nVERSION:3.0\n" + commonData + "END:VCARD";
+
+            // --- 2. string for file(with photo) ---
+            fileString = "BEGIN:VCARD\nVERSION:3.0\n" + commonData;
+            
+            //  If there is a logo append vCard file
+            if (uploadedLogoBase64) {
+                
+                let cleanBase64 = uploadedLogoBase64.replace(/^data:image\/(png|jpg|jpeg);base64,/, "");
+                fileString += "PHOTO;ENCODING=b;TYPE=JPEG:" + cleanBase64 + "\n";
+            }
+            fileString += "END:VCARD";
+
+            document.getElementById("qr-area").style.display = "flex";
+            document.getElementById("qr-code").innerHTML = ""; 
+            document.getElementById("downloadBtn").style.display = "block";
+
+            // while creating QR=> qrString 
+            var options = {
+                text: qrString,
+                width: 240,
+                height: 240,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H,
+                
+                logo: uploadedLogoBase64, 
+                logoWidth: 60, 
+                logoHeight: 60, 
+                logoBackgroundColor: '#ffffff',
+                logoBackgroundTransparent: false
+            };
+
+            qrCodeObj = new QRCode(document.getElementById("qr-code"), options);
+            
+            setTimeout(() => {
+                document.getElementById("qr-area").scrollIntoView({behavior: 'smooth'});
+            }, 100);
+        }
+
+        function downloadVCF() {
+            const element = document.createElement("a");
+            // while downloading=> fileString 
+            const file = new Blob([fileString], {type: "text/vcard;charset=utf-8"});
+            element.href = URL.createObjectURL(file);
+            element.download = "qcard-contact.vcf";
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        }
+    </script>
+</body>
+</html>
