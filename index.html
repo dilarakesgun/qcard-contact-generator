@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QCard - Branding Edition</title>
+    <title>QvCard - Branding Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/easyqrcodejs@4.5.0/dist/easy.qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -99,7 +99,7 @@
             <button class="lang-btn" id="btn-de" onclick="setLanguage('de')">DE</button>
         </div>
 
-        <h1>QCard <span style="color:#2563eb">Pro</span></h1>
+        <h1>QvCard <span style="color:#2563eb">Pro</span></h1>
         <p class="subtitle" data-lang="subtitle">Verileriniz tarayıcınızda otomatik kaydedilir.</p>
 
         <div class="section-title">
@@ -413,16 +413,48 @@
             }, 100);
         }
 
-        function downloadVCF() {
+        async function downloadVCF() {
+           
+            if (!fileString) {
+                alert(translations[currentLang].alert_error || "Lütfen önce bilgileri doldurun.");
+                return;
+            }
+
+           
+            const blob = new Blob([fileString], { type: "text/vcard;charset=utf-8" });
+            const file = new File([blob], "contact.vcf", { type: "text/vcard" });
+
+            // 1. Web Share API
+           
+            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: document.getElementById('name').value || 'Contact',
+                        text: 'İletişim bilgilerim / My Contact Info'
+                    });
+                    return; 
+                } catch (error) {
+                    
+                    console.log("Paylaşım iptal edildi veya desteklenmiyor:", error);
+                }
+            }
+
+            // 2 PC and old phones
+            const url = URL.createObjectURL(blob);
             const element = document.createElement("a");
-            // while downloading=> fileString 
-            const file = new Blob([fileString], {type: "text/vcard;charset=utf-8"});
-            element.href = URL.createObjectURL(file);
-            element.download = "qcard-contact.vcf";
-            document.body.appendChild(element);
+            element.href = url;
+            element.download = "contact.vcf";
+            document.body.appendChild(element); // Firefox için gerekli
             element.click();
-            document.body.removeChild(element);
+            
+          
+            setTimeout(() => {
+                document.body.removeChild(element);
+                window.URL.revokeObjectURL(url);
+            }, 100);
         }
     </script>
 </body>
+
 </html>
